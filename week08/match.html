@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+        div #id.class {
+            color:red;
+        }
+    </style>
+</head>
+  <body>
+     <div>
+         <div id="id" class="class" attr="attr">xxx</div>
+     </div>
+    <script>
+        function match(selector, element) {
+            //从里开始匹配
+            const sels = selector.split(' ').reverse();
+            //匹配当前元素
+            if(matchElement(sels[0],element)){
+                //移除已匹配元素
+                sels.shift();
+                //循环判断父元素是否匹配
+                let parent = element.parentNode;
+                while(sels.length&&parent){
+                    matchElement(sels[0],parent)?sels.shift():parent=parent.parentNode;
+                }
+                //当数组为空说明所有元素都被匹配到了
+                return !sels.length;
+            }       
+            //当前元素不匹配返回false
+            return false;
+        }
+
+        //匹配简单选择器
+        //标签 类 id 属性 
+        const re = /^([a-z]+)?(#[a-z]+)?(\.[a-z]+)?(\[[a-z]+=[a-z]+\])?$/;
+        function matchElement(sel,element){
+            const m = re.exec(sel);
+            if(!m) return false;
+            const [,tag,id,cls,attr] = m;
+            let matched =true;
+            if(tag){
+                matched = tag.toUpperCase()===element.tagName;
+            }
+            if(id){
+                matched = id.slice(1) === element.id;
+            }
+            if(cls){
+                matched = cls.slice(1) === element.className;
+            }
+            if(attr) {
+                const [,k,v]= /^\[([a-z]+)=([a-z]+)\]$/.exec(attr);
+                matched =element.getAttribute(k) === v;
+            }
+            return matched;
+        }
+        console.log(match("div #id.class[attr=attr]", document.getElementById("id")));
+    </script>
+  </body>
+</html>

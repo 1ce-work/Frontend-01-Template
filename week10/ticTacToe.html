@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .cell {
+        width: 100px;
+        height: 100px;
+        background-color: green;
+        display: inline-block;
+        border: solid 1px white;
+        vertical-align: middle;
+
+
+        line-height: 100px;
+        font-size: 50px;
+        text-align: center;
+    }
+    </style>
+    <title>TicTacToe</title>
+</head>
+<body>
+    <div id="board"></div>
+    <script>
+        let pattern = [
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ]
+        let flag = 1 ;
+        let win = false;
+        function show(pattern){
+            let b = document.getElementById('board');
+            b.innerHTML = '';
+            for(let i=0;i<3;i++){
+                for(let j=0;j<3;j++){
+                    let c=document.createElement('div');
+                    c.classList.add('cell');
+
+                    c.innerText=pattern[i][j] == 2 ? "❌" :
+                    pattern[i][j] == 1 ? "⭕️" : "";
+                    c.addEventListener('click',()=>{
+                        userMove(j,i);
+                       
+                    })
+                    b.appendChild(c);
+                }
+                b.appendChild(document.createElement('br'))
+            }
+        }
+        //x === j
+        //y === i
+        function userMove(x,y){
+            if(win || pattern[y][x]!==0) return;
+            pattern[y][x]=flag; // arr use i,j
+            if(check(pattern,flag)){
+                win=true;
+                alert(flag === 2 ? '❌ is winner!' : '⭕️ is winner!')
+            }
+            flag = 3 -flag; // o x棋子交替下 1 for o ，2 for x
+            //重新show board
+            show(pattern)
+            // if(willWin(pattern,flag)){
+            //     console.log(flag === 2 ? '❌ will win!' : '⭕️ will win')
+            // }
+            aiMove();
+        }
+
+        function aiMove(){
+            let choice = bestChoice(pattern,flag);
+            if(choice.point){
+                const [i,j] = choice.point;
+                pattern[j][i] = flag;
+            }
+
+            if(check(pattern,flag)){
+                win=true;
+                alert(flag === 2 ? '❌ is winner!' : '⭕️ is winner!')
+            }
+            flag = 3-flag;
+            show(pattern);
+        }
+
+        //判断获胜
+        function check(pattern,flag){
+            //横向
+            for(let i=0;i<3;i++){
+                let win = true; 
+                //统计一横行是否为同一flag
+                for(let j=0;j<3;j++){
+                    if(pattern[i][j]!==flag){
+                        win=false;
+                        break;
+                    }
+                }
+                //连三子则返回true
+                if(win){
+                    return true;
+                }
+            }
+            //纵向
+            for(let i=0;i<3;i++){
+                let win = true; 
+                //统计一横行是否为同一flag
+                for(let j=0;j<3;j++){
+                    if(pattern[j][i]!==flag){
+                        win=false;
+                        break;
+                    }
+                }
+                //连三子则返回true
+                if(win){
+                    return true;
+                }
+            }
+            //斜
+            for(let i=0;i<3;i++){
+                let win = true; 
+                //统计一横行是否为同一flag
+                for(let j=0;j<3;j++){
+                    if(pattern[j][j]!==flag){
+                        win=false;
+                        break;
+                    }
+                }
+                //连三子则返回true
+                if(win){
+                    return true;
+                }
+            }
+            for(let i=0;i<3;i++){
+                let win = true; 
+                //统计一横行是否为同一flag
+                for(let j=0;j<3;j++){
+                    if(pattern[j][2-j]!==flag){
+                        win=false;
+                        break;
+                    }
+                }
+                //连三子则返回true
+                if(win){
+                    return true;
+                }
+            }
+
+        return false;
+        }
+        function clone(pattern){
+            return JSON.parse(JSON.stringify(pattern))
+        }
+        function willWin(pattern,flag){
+            for(let i=0;i<3;i++){
+                for(let j=0;j<3;j++){
+                    if(pattern[i][j]!==0){
+                        continue;
+                    }
+                    let tmp = clone(pattern);
+                    tmp[i][j]=flag;
+                    if(check(tmp,flag)){
+                        return [j,i];
+                    }
+                }
+            }
+            return null;
+        }
+        let openings = new Map();
+        openings.set([
+            [0,0,0],
+            [0,0,0],
+            [0,0,0]
+        ].toString(),{
+            point: [1,1],
+            result:0
+        });
+        function bestChoice(pattern,flag){
+            let point = willWin(pattern,flag);
+            if(point){
+                //willWin的情况下最好的选择
+                return {
+                    point: point,
+                    result:1
+                }
+            }
+            //先假设在最坏的状况 -1
+            let result=-1;
+            outer:for(let i=0;i<3;i++){
+                for(let j=0;j<3;j++){
+                    if(pattern[i][j]!==0){
+                        continue;
+                    }
+                    let tmp = clone(pattern);
+                    tmp[i][j]=flag;
+                    let oppo=bestChoice(tmp,3-flag); //对手最好的选择
+                    if(-oppo.result>= result){
+                        point=[j,i];
+                        result= - oppo.result; //对手的最好res就是我们的最坏res
+                    }
+                if(result===1){
+                    break outer;
+                }
+                }
+            }
+            return {
+                    point: point,
+                    result: point? result:0
+                }
+        }
+
+
+
+
+       show(pattern);
+    </script>
+</body>
+</html>
