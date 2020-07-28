@@ -1,0 +1,175 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .cell {
+             display:inline-block;
+            width:6px;
+            height:6px;
+            background-color: gray;
+            border-bottom:solid 1px white;
+            border-right:solid 1px white;
+            vertical-align: middle;
+            
+        }
+        #container{
+            width:701px;
+        }
+    </style>
+</head>
+<body>
+        <div id="container"></div>
+        <button onClick ="localStorage.map = JSON.stringify(map)" >save</button>
+    <script>
+
+        class Sorted {
+            constructor (data,cmp){
+                this.data=data;
+                this.cmp =cmp;
+            }
+            take(){ // 每次取一个最小的
+                if(!this.data.length){
+                    return;
+                }
+                let min = this.data[0];
+                let minIndex = 0;
+                for(let i=1;i<this.data.length;i++){
+                   if(this.cmp(this.data[i],min)<0){
+                       min = this.data[i];
+                       minIndex = i;
+                   }
+                }
+                this.data[minIndex] = this.data[this.data.length-1];
+                this.data.pop(); //取出最小的然后覆盖掉
+                return min;
+            }
+            insert(v){
+                this.data.push(v);
+            }
+
+            get length(){
+                return this.data.length;
+            }
+        }
+
+        let map = localStorage.map ? JSON.parse(localStorage.map):new Array(10000).fill(0); //用一维数组表示100*100的地图
+        let container = document.getElementById('container');
+        for(let y=0;y<100;y++){
+            for(let x=0;x<100;x++){
+                let cell = document.createElement("div");
+                cell.classList.add("cell");
+                if(map[y*100+x]===1){
+                    cell.style.backgroundColor = 'purple';
+                }
+                cell.addEventListener("mousemove",()=>{
+                    if(mouse) { //开启mouse
+                        if(clear) {
+                            cell.style.backgroundColor = '';
+                            map[y * 100 + x] = 0;
+                        }else {
+                            cell.style.backgroundColor = 'purple';
+                            map[y * 100 + x] = 1;
+                        }
+                    }
+                })
+                container.appendChild(cell);
+            }
+        }
+        let mouse = false;
+        let clear = false;
+    
+        document.addEventListener('mousedown',e=>{
+            mouse = true;
+            clear = (e.which===3); //右键开启擦除
+        })
+        document.addEventListener('mouseup', ()=> mouse = false)
+        // 禁止
+        document.addEventListener('contextmenu', e => e.preventDefault())
+        
+        function sleep(t){
+            return new Promise(function(resolve){
+                
+                setTimeout(resolve, t);
+            });
+        }    
+
+       
+
+        async function path(map,start,end){
+            let table = Object.create(map);
+            // let table = map.slice();
+            function distance([x,y]){ //计算坐标到终点的直线距离
+                return (x-end[0])**2 + (y-end[1])**2;
+            }
+            let collection = new Sorted([start],(a,b)=>{
+                // a [x,y]
+                return distance(a)-distance(b);
+            });
+
+            container.children[start[1]*100+start[0]].style.backgroundColor ='red';
+            container.children[end[1]*100+end[0]].style.backgroundColor ='red';
+
+            async function insert(x,y,pre){
+                if(x<0||y<0||x>=100 || y>=100){
+                    return; //遇到边界 
+                }
+                if(table[100*y+x]!==0){
+                    return; //遇到障碍
+                }
+                await sleep(1);
+                //标记该位置的上一位置
+                // 用于后面标记路径
+                table[100*y+x] = pre;
+                // show
+                container.children[y*100+x].style.backgroundColor = 'lightblue';
+                collection.insert([x,y]);
+                
+            }
+
+            while(collection.length){
+                // 启发式搜索
+                let [x,y] = collection.take();
+               
+                //判断找到end
+                if(x === end[0] && y === end[1]){
+                   let path = [];
+                   while(x!== start[0]||y!==start[1]){
+                       path.push(map[y*100+x]);
+                       [x,y] = table[y*100+x];
+                       container.children[y*100+x].style.backgroundColor = 'pink';
+                   }
+                   return path;
+                }
+                // 将上下左右四个方向push进queue中
+                await insert(x-1,y,[x,y]);
+                await insert(x+1,y,[x,y]);
+                await insert(x,y-1,[x,y]);
+                await insert(x,y+1,[x,y]);
+               //走斜线
+               //防穿斜线 
+               if(!table[x-1+y*100]||!table[x-1+y*100]){
+                //    console.log(table[x-1,y],table[x-1,y])
+                   await insert(x-1,y-1,[x,y]);
+               }
+               if(!table[x+1+y*100]||!table[x+(y+1)*100]){
+                await insert(x+1,y+1,[x,y]);
+               }
+               if(!table[x+1+y*100]||!table[x+(y-1)*100]){
+                // console.log(table[x+1,y],table[x,y-1])
+                await insert(x+1,y-1,[x,y]);
+               }
+               if(!table[x-1+y*100]||!table[x+(y+1)*100]){
+                // console.log(table[x-1,y],table[x,y+1])
+                await insert(x-1,y+1,[x,y]);
+               }
+            }
+            // 没找到
+            return null;
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="re">
+        <span>1</span><p>2</p><a>3</a>
+        <div>4</div>
+    </div>
+
+
+    <script>
+        let element = document.getElementById('re');
+
+        function reverse(element){
+           // childNodes是会随着操作而改变的
+           // 为了方便操作复制一份原本的node出来
+            let children = Array.prototype.slice.call(element.childNodes);
+           
+           //appendChild时 已有的node会被移到新位置
+           //不需要先手动移除
+           children.reverse();
+           for(let child of children){
+               element.appendChild(child);
+           }
+        }
+
+        function reverse2(element){
+            let l = element.childNodes.length;
+            // 倒着append回去
+            while(l-->0){
+                element.appendChild(element.childNodes[l])
+            }
+        }
+
+        //3. document.fragment 
+        // 批量操作dom 重排少
+
+        //4. range API
+        function reverse4(element){
+            let range = new Range();
+            // Range.selectNodeContents() 方法用于设置 Range，使其包含一个 Node 的内容。
+            // Range 的起始和结束节点的父节点即为引用节点。 startOffset 为 0,  endOffset 则是引用节点包含的字符数或子节点个数。
+            range.selectNodeContents(element);
+            // Range.extractContents() 方法移动了Range 中的内容从文档树到DocumentFragment（文档片段对象）。
+            let fragment = range.extractContents();
+             
+            // 将fragment倒序
+            // 在一次性插入element下
+            let l = fragment.childNodes.length;
+            while(l-- >0){
+                fragment.appendChild(fragment.childNodes[l])
+            }
+
+            element.appendChild(fragment);
+        }
+
+        
+
+    </script>
+</body>
+</html>
